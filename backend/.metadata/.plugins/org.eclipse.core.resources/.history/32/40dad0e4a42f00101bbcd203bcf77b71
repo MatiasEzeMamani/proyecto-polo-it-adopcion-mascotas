@@ -1,0 +1,7 @@
+package com.adopciones.adopcionmascotas.seguridad;
+
+@Configuration
+
+public class CorsConfig {
+
+}

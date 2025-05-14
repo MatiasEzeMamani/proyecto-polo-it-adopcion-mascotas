@@ -1,0 +1,39 @@
+package com.adopciones.adopcionmascotas.mappers;
+
+import java.util.List;
+
+import org.mapstruct.Mapper;
+
+import com.adopciones.adopcionmascotas.dtos.UsuarioDTO;
+import com.adopciones.adopcionmascotas.modelos.Usuario;
+
+
+[2m2025-05-13T01:20:00.804-03:00[0;39m [32m INFO[0;39m [35m5560[0;39m [2m--- [adopcionmascotas] [           main] [0;39m[36m.s.b.a.l.ConditionEvaluationReportLogger[0;39m [2m:[0;39m 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+[2m2025-05-13T01:20:00.819-03:00[0;39m [31mERROR[0;39m [35m5560[0;39m [2m--- [adopcionmascotas] [           main] [0;39m[36mo.s.b.d.LoggingFailureAnalysisReporter  [0;39m [2m:[0;39m 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Field usuarioMapper in com.adopciones.adopcionmascotas.servicios.impl.UsuarioServicio required a bean of type 'com.adopciones.adopcionmascotas.mappers.UsuarioMapper' that could not be found.
+
+The injection point has the following annotations:
+	- @org.springframework.beans.factory.annotation.Autowired(required=true)
+
+
+Action:
+
+Consider defining a bean of type 'com.adopciones.adopcionmascotas.mappers.UsuarioMapper' in your configuration.
+public interface UsuarioMapper {
+	
+	UsuarioDTO usuarioToUsuarioDTO(Usuario usuario);
+	
+	Usuario usuarioDTOtoUsuario(UsuarioDTO usuarioDTO); 
+	
+	List<UsuarioDTO> usuariosToUsuarioDTOs(List<Usuario> usuarios);
+
+}

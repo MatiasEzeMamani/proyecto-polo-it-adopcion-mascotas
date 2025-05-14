@@ -1,0 +1,32 @@
+package com.adopciones.adopcionmascotas.dtos;
+
+import com.adopciones.adopcionmascotas.modelos.Estado;
+import com.adopciones.adopcionmascotas.modelos.Rol;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.validation.constraints.NotEmpty;
+import lombok.Data;
+
+@Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class UsuarioDTO {
+	
+	private Long usuarioId;
+
+	private String nombre;
+
+	private String apellido;
+	
+	private String telefono;
+	
+	private String email;
+private Rol rol;
+	
+	@Enumerated(EnumType.STRING)
+	private Estado estado;
+	
+	@NotEmpty
+	private String direccion;
+}

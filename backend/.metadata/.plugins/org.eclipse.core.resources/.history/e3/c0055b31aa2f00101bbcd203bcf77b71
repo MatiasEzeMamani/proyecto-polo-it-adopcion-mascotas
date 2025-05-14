@@ -1,0 +1,8 @@
+package com.adopciones.adopcionmascotas.excepciones;
+
+public class OurExceptionextends RuntimeException{
+
+	public OurException(String message) {
+		super(message);
+	}
+}

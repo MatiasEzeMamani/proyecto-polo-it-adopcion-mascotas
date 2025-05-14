@@ -1,0 +1,9 @@
+package com.adopciones.adopcionmascotas.mappers;
+@Mapper(componentModel = "spring")
+public class UsuarioMapper {
+	UsuarioDTO usuarioToUsuarioDTO(Usuario usuario);
+	
+	Worker workerDTOtoWorker(WorkerDTO workerDTO); 
+	
+	List<WorkerDTO> workersToWorkerDTOs(List<Worker> workers);
+}

@@ -1,0 +1,21 @@
+package com.adopciones.adopcionmascotas.servicios.interfaz;
+
+import com.adopciones.adopcionmascotas.dtos.Response;
+import com.adopciones.adopcionmascotas.modelos.Usuario;
+
+public interface IUsuarioServicio {
+	
+	Response register(Usuario usuario);
+	
+	Response login(LoginRequest loginRequest);
+	
+	Response getAllUsers();
+	
+	Response deleteUser(String workerId, Usuario currentUser);
+	
+	Response getUserById(String workerId);
+	
+	Response getMyInfo(String email);
+
+	Response updateWorker(String workerId, WorkerDTO workerDTO);
+}

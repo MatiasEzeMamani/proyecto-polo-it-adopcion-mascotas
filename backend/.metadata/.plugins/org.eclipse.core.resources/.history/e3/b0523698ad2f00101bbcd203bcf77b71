@@ -1,0 +1,7 @@
+package com.adopciones.adopcionmascotas.controladores;
+
+@RestController
+@RequestMapping("/api/usuarios")
+public class UsuarioControlador {
+
+}

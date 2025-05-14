@@ -1,0 +1,5 @@
+package com.adopciones.adopcionmascotas.utilidades;
+
+public class JWTUtilidades {
+
+}

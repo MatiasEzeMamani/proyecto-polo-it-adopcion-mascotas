@@ -1,0 +1,24 @@
+package com.adopciones.adopcionmascotas.servicios.impl;
+
+package com.proyecto.fabrica.ps.service.impl;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+
+import com.proyecto.fabrica.ps.exception.OurException;
+import com.proyecto.fabrica.ps.repositories.WorkerRepository;
+
+@Service
+public class CustomUserDetailsService implements UserDetailsService {
+	
+	@Autowired
+	private WorkerRepository wr;
+	
+	@Override
+	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException{
+		return wr.findByEmail(username).orElseThrow(() -> new OurException("Username/Email not found"));
+	}
+}

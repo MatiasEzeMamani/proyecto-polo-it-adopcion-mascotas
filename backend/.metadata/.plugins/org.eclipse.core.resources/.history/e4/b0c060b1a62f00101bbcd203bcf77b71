@@ -1,0 +1,7 @@
+package com.adopciones.adopcionmascotas.dtos;
+
+@Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class UsuarioDTO {
+
+}

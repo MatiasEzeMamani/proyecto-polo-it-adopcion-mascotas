@@ -1,0 +1,273 @@
+package com.adopciones.adopcionmascotas.controladores;
+
+import java.util.List;
+
+import javax.management.relation.Role;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.adopciones.adopcionmascotas.dtos.Response;
+import com.adopciones.adopcionmascotas.dtos.UsuarioDTO;
+import com.adopciones.adopcionmascotas.excepciones.OurException;
+import com.adopciones.adopcionmascotas.mappers.UsuarioMapper;
+import com.adopciones.adopcionmascotas.modelos.Rol;
+import com.adopciones.adopcionmascotas.modelos.Usuario;
+import com.adopciones.adopcionmascotas.repositorios.UsuarioRepositorio;
+import com.adopciones.adopcionmascotas.utilidades.JWTUtils;
+
+@RestController
+@RequestMapping("/api/usuarios")
+public class UsuarioControlador {
+	
+	@Autowired
+	private UsuarioRepositorio workerRepository;
+	
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+	
+	@Autowired
+	private JWTUtils jwtUtils;
+	
+	@Autowired
+	private AuthenticationManager authenticationManager;
+	
+	@Autowired
+	private UsuarioMapper workerMapper;
+
+	@Override
+	public Response register(Usuario worker) {
+	    Response response = new Response();
+	    try {
+	    	
+	    	if(worker.getRol() == null ) {
+	    		worker.setRol(Rol.ADOPTANTE);
+	    	}
+	    	if(workerRepository.existsByEmail(worker.getEmail())) {
+	    		throw new OurException(worker.getEmail() + "Already Exists" );
+	    	}
+	    	
+	    	worker.setContrasena(passwordEncoder.encode(worker.getContrasena()));
+	    	Usuario savedWorker = workerRepository.save(worker);
+
+	    	UsuarioDTO workerDTO = workerMapper.workerToWorkerDTO(savedWorker);
+	    	response.setStatusCode(200);
+	    	response.setWorker(workerDTO);
+	    	
+	    }catch(OurException e){
+	    	
+	    	response.setStatusCode(400);
+	    	response.setMessage(e.getMessage());
+	    	
+	    }catch(Exception e) {
+	    	
+	    	response.setStatusCode(500);
+	    	response.setMessage("Error Ocured During Worker Registration " + e.getMessage());
+	    }
+	    
+		return response;
+	}
+
+	@Override
+	public Response login(LoginRequest loginRequest) {
+
+		Response response = new Response();
+		
+		try {
+			
+			authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
+			
+			var worker = workerRepository.findByEmail(loginRequest.getEmail()).orElseThrow(()-> new OurException("Worker not found"));
+			
+			var token = jwtUtils.generateToken(worker);
+			
+			response.setStatusCode(200);
+			response.setToken(token);
+			response.setRole(worker.getRole());
+			response.setExpirationTime("7 Days");
+			response.setMessage("successful");
+			
+		} catch (OurException e) {
+			
+			response.setStatusCode(404);
+	    	response.setMessage(e.getMessage());
+	    	
+		} catch (Exception e) {
+			
+			response.setStatusCode(500);
+	    	response.setMessage("Error Ocured During Worker Login " + e.getMessage());
+	    	
+		}
+		
+		return response;
+	}
+
+	@Override
+	public Response getAllUsers() {
+		
+		Response response = new Response();
+		
+		try {
+			
+			List<Worker> workerList = workerRepository.findAll();
+			List<WorkerDTO> workerDTOList = workerMapper.workersToWorkerDTOs(workerList);
+			
+			response.setStatusCode(200);
+			response.setMessage("successful");
+			response.setWorkerList(workerDTOList);
+				
+		} catch (Exception e) {
+			
+			response.setStatusCode(500);
+	    	response.setMessage("Error getting all workers " + e.getMessage());
+	    	
+		}
+		
+		return response;
+	}
+
+	@Override
+	public Response deleteUser(String workerId, @AuthenticationPrincipal Worker currentUser) {
+		
+		Response response = new Response();
+		
+		try {
+			
+			if (!currentUser.getRole().equals(Role.ADMINISTRATOR)) {
+		            throw new OurException("No tienes permisos para eliminar trabajadores");
+		    }
+			workerRepository.findById(Long.valueOf(workerId)).orElseThrow(() -> new OurException("User not found")); 
+			workerRepository.deleteById(Long.valueOf(workerId));
+			
+			response.setStatusCode(200);
+			response.setMessage("successful");
+			
+		} catch (OurException e){
+			
+			response.setStatusCode(404);
+			response.setMessage(e.getMessage());
+			
+		} catch (Exception e){
+			
+			response.setStatusCode(500);
+			response.setMessage("Error getting all users " + e.getMessage());
+			
+		}
+		
+		return response;
+	}
+
+	@Override
+	public Response getUserById(String workerId) {
+		
+		Response response = new Response();
+		
+		try {
+			
+			Worker worker = workerRepository.findById(Long.valueOf(workerId)).orElseThrow(() -> new OurException("Worker not found"));
+			WorkerDTO workerDTO = workerMapper.workerToWorkerDTO(worker);
+			
+			response.setStatusCode(200);
+			response.setMessage("successful");
+			response.setWorker(workerDTO);
+			
+		} catch (OurException e) {
+			
+			response.setStatusCode(404);
+			response.setMessage(e.getMessage());
+			
+		} catch (Exception e) {
+			
+			response.setStatusCode(500);
+			response.setMessage("Error getting all users " + e.getMessage());
+			
+		}
+		
+		return response;
+	}
+
+	@Override
+	public Response getMyInfo(String email) {
+
+		Response response = new Response();
+		
+		try {
+			
+			Worker worker = workerRepository.findByEmail(email).orElseThrow(() -> new OurException("Worker not found"));
+			WorkerDTO workerDTO = workerMapper.workerToWorkerDTO(worker);
+			
+			response.setStatusCode(200);
+			response.setMessage("successful");
+			response.setWorker(workerDTO);
+			
+		} catch (OurException e) {
+			
+			response.setStatusCode(404);
+			response.setMessage(e.getMessage());
+			
+		} catch (Exception e) {
+			
+			response.setStatusCode(500);
+			response.setMessage("Error getting all users " + e.getMessage());
+			
+		}
+		
+		return response;
+	}
+	
+	@Override
+	public Response updateWorker(String workerId, WorkerDTO workerDTO) {
+	    Response response = new Response();
+	    
+	    try {
+	        Worker worker = workerRepository.findById(Long.valueOf(workerId))
+	                            .orElseThrow(() -> new OurException("Worker not found"));
+
+	        // Aquí deberías actualizar los atributos de worker con los valores del workerDTO
+	        
+	        if (workerDTO.getEmail() != null && !workerDTO.getEmail().equals(worker.getEmail())) {
+	            if (workerRepository.existsByEmail(workerDTO.getEmail())) {
+	                throw new OurException("El email ya está en uso");
+	            }
+	            worker.setEmail(workerDTO.getEmail());
+	        }
+
+	        if (workerDTO.getName() != null) worker.setName(workerDTO.getName());
+	        if (workerDTO.getLastName() != null) worker.setLastName(workerDTO.getLastName());
+	        if (workerDTO.getRole() != null) worker.setRole(workerDTO.getRole());
+	        
+	        if (workerDTO.getPassword() != null && !workerDTO.getPassword().isEmpty()) {
+	            // Validar que la contraseña y la confirmación coincidan
+	            if (!workerDTO.getPassword().equals(workerDTO.getConfirm())) {
+	                throw new OurException("La contraseña y su confirmación no coinciden");
+	            }
+
+	            // Encriptar la nueva contraseña
+	            String encryptedPassword = passwordEncoder.encode(workerDTO.getPassword());
+	            worker.setPassword(encryptedPassword);
+	        }
+	        
+	        Worker updatedWorker = workerRepository.save(worker);
+
+	        response.setStatusCode(200);
+	        response.setMessage("Worker updated successfully");
+	        response.setWorker(workerMapper.workerToWorkerDTO(updatedWorker));
+	        
+	    } catch (OurException e) {
+	        response.setStatusCode(404);
+	        response.setMessage(e.getMessage());
+	    } catch (Exception e) {
+	    	
+	    	e.printStackTrace();
+	        response.setStatusCode(500);
+	        response.setMessage("Error updating worker: " + e.getMessage());
+	    }
+	    
+	    return response;
+	}
+}
