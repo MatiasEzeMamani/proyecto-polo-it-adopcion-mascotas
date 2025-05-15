@@ -1,0 +1,30 @@
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
+import java.security.Key;
+import java.util.Date;
+
+public class JwtTest {
+    public static void main(String[] args) {
+        Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+
+        String jwt = Jwts.builder()
+            .setSubject("usuario123")
+            .setIssuedAt(new Date())
+            .setExpiration(new Date(System.currentTimeMillis() + 3600000)) // 1 hora
+            .signWith(key)
+            .compact();
+
+        System.out.println("Token generado: " + jwt);
+
+        // Validación del token
+        String subject = Jwts.parserBuilder()
+            .setSigningKey(key)
+            .build()
+            .parseClaimsJws(jwt)
+            .getBody()
+            .getSubject();
+
+        System.out.println("Subject del token: " + subject);
+    }
+}

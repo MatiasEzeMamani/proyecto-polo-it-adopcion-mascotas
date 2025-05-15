@@ -1,0 +1,35 @@
+package com.adopciones.adopcionmascotas.utils;
+
+import java.security.Key;
+import java.time.Instant;
+import java.util.Date;
+
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+
+public class JwtTest {
+    public static void main(String[] args) {
+        // Generar clave secreta
+        Key key = Keys.secretKeyFor(Jwts.SIG.HS256); // Usa el nuevo Jwts.SIG enum para algoritmo
+
+        // Generar JWT
+        String jwt = Jwts.builder()
+                .subject("usuario123")
+                .issuedAt(Date.from(Instant.now()))
+                .expiration(Date.from(Instant.now().plusSeconds(3600))) // 1 hora
+                .signWith(key)
+                .compact();
+
+        System.out.println("Token generado: " + jwt);
+
+        // Validar y parsear JWT
+        String subject = ((Object) Jwts.builder())
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(jwt)
+                .getPayload()
+                .getSubject();
+
+        System.out.println("Subject del token: " + subject);
+    }
+}

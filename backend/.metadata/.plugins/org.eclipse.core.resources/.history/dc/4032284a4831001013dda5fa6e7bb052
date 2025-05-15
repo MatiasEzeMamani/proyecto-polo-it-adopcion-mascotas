@@ -1,0 +1,56 @@
+package com.adopciones.adopcionmascotas.seguridades;
+
+import java.io.IOException;
+
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import com.adopciones.adopcionmascotas.utilidades.JWTUtils;
+
+import io.jsonwebtoken.ExpiredJwtException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+@Component
+public class JWTAuthFilter extends OncePerRequestFilter{
+	
+	private final JWTUtils jwtUtils;
+
+    public JWTAuthFilter(JWTUtils jwtUtils) {
+        this.jwtUtils = jwtUtils;
+    }
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+        String token = extractTokenFromHeader(request);
+
+        try {
+            UserDetails userDetails;
+			if (token != null && jwtUtils.isValidToken(token, userDetails)) {
+                // Setear autenticación en contexto si es necesario
+            }
+            filterChain.doFilter(request, response);
+
+        } catch (ExpiredJwtException ex) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+            response.getWriter().write("Token expirado");
+            return;
+        } catch (Exception ex) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Token inválido");
+            return;
+        }
+    }
+
+    private String extractTokenFromHeader(HttpServletRequest request) {
+        String bearer = request.getHeader("Authorization");
+        if (bearer != null && bearer.startsWith("Bearer ")) {
+            return bearer.substring(7);
+        }
+        return null;
+    }
+}

@@ -1,0 +1,5 @@
+package com.adopciones.adopcionmascotas.dtos;
+
+public class Response {
+
+}
