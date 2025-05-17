@@ -16,8 +16,8 @@ import io.jsonwebtoken.security.Keys;
 
 @Service
 public class JWTUtils {
-	private static final long EXPIRATION_TIME = 1000 * 60; // 1 hora para el Access Token
-	private static final long REFRESH_TOKEN_EXPIRATION_TIME = 1000 * 60 * 5; // 7 días para el Refresh Token
+	private static final long EXPIRATION_TIME = 1000 * 60 * 60; // 1 hora para el Access Token
+	private static final long REFRESH_TOKEN_EXPIRATION_TIME = 1000 * 60 * 60  * 24 * 7; // 7 días para el Refresh Token
 
 	private final Key key;
 

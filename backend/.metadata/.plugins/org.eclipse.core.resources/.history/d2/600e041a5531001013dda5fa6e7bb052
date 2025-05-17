@@ -1,0 +1,5 @@
+package com.adopciones.adopcionmascotas.repositorios;
+
+public interface MascotaRepositorio {
+
+}

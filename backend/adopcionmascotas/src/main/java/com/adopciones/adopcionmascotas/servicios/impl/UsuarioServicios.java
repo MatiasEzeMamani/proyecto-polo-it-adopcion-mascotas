@@ -17,6 +17,7 @@ import com.adopciones.adopcionmascotas.dtos.Response;
 import com.adopciones.adopcionmascotas.dtos.UsuarioDTO;
 import com.adopciones.adopcionmascotas.excepciones.OurException;
 import com.adopciones.adopcionmascotas.mappers.UsuarioMapper;
+import com.adopciones.adopcionmascotas.modelos.Estado;
 import com.adopciones.adopcionmascotas.modelos.Rol;
 import com.adopciones.adopcionmascotas.modelos.Usuario;
 import com.adopciones.adopcionmascotas.repositorios.UsuarioRepositorio;
@@ -25,6 +26,7 @@ import com.adopciones.adopcionmascotas.utilidades.JWTUtils;
 
 @Service
 public class UsuarioServicios implements IUsuarioServicio {
+	
 	@Autowired
 	private UsuarioRepositorio usuarioRepositorio;
 	
@@ -172,7 +174,7 @@ public class UsuarioServicios implements IUsuarioServicio {
 	}
 
 	@Override
-	public Response deleteUser(String usuarioId, @AuthenticationPrincipal Usuario currentUser) {
+	public Response deleteUser(Long usuarioId, @AuthenticationPrincipal Usuario currentUser) {
 		
 		Response response = new Response();
 		
@@ -201,9 +203,69 @@ public class UsuarioServicios implements IUsuarioServicio {
 		
 		return response;
 	}
+	
+	@Override
+	public Response desactivarUsuario(Long usuarioId, Usuario currentUser) {
+	    Response response = new Response();
+
+	    try {
+	        Usuario usuario = usuarioRepositorio.findById(Long.valueOf(usuarioId))
+	                            .orElseThrow(() -> new OurException("Usuario no encontrado"));
+
+	        if (!usuario.getUsuarioId().equals(currentUser.getUsuarioId()) 
+	            && !currentUser.getRol().equals(Rol.ADMIN)) {
+	            throw new OurException("No tienes permisos para desactivar este usuario");
+	        }	
+
+	        usuario.setEstado(Estado.INACTIVO);
+	        usuarioRepositorio.save(usuario);
+
+	        response.setStatusCode(200);
+	        response.setMessage("Usuario desactivado correctamente");
+
+	    } catch (OurException e) {
+	        response.setStatusCode(404);
+	        response.setMessage(e.getMessage());
+	    } catch (Exception e) {
+	        response.setStatusCode(500);
+	        response.setMessage("Error al desactivar el usuario: " + e.getMessage());
+	    }
+
+	    return response;
+	}
 
 	@Override
-	public Response getUserById(String usuarioId) {
+	public Response activateUser(String usuarioId, Usuario currentUser) {
+	    Response response = new Response();
+
+	    try {
+	        if (!currentUser.getRol().equals(Rol.ADMIN)) {
+	            throw new OurException("No tienes permisos para activar usuarios");
+	        }
+
+	        Usuario usuario = usuarioRepositorio.findById(Long.valueOf(usuarioId))
+	                .orElseThrow(() -> new OurException("Usuario no encontrado"));
+
+	        usuario.setEstado(Estado.ACTIVO);
+	        usuarioRepositorio.save(usuario);
+
+	        response.setStatusCode(200);
+	        response.setMessage("Usuario activado correctamente");
+
+	    } catch (OurException e) {
+	        response.setStatusCode(404);
+	        response.setMessage(e.getMessage());
+	    } catch (Exception e) {
+	        response.setStatusCode(500);
+	        response.setMessage("Error al activar el usuario: " + e.getMessage());
+	    }
+
+	    return response;
+	}
+
+	
+	@Override
+	public Response getUserById(Long usuarioId) {
 		
 		Response response = new Response();
 		
@@ -261,7 +323,7 @@ public class UsuarioServicios implements IUsuarioServicio {
 	}
 	
 	@Override
-	public Response updateUsuario(String usuarioId, UsuarioDTO usuarioDTO) {
+	public Response updateUsuario(Long usuarioId, UsuarioDTO usuarioDTO) {
 	    Response response = new Response();
 	    
 	    try {

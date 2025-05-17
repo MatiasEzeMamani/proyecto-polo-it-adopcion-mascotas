@@ -1,0 +1,12 @@
+package com.adopciones.adopcionmascotas.modelos;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import lombok.Data;
+
+@Data
+@Entity
+@Table(name = "mascotas")
+public class Mascota {
+
+}

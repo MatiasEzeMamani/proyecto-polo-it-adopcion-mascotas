@@ -1,0 +1,5 @@
+package com.adopciones.adopcionmascotas.servicios.interfaz;
+
+public interface IMascotaServicio {
+	Response crearMascota(Mascota mascota)
+}

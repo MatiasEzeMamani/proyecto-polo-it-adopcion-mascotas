@@ -1,0 +1,11 @@
+package com.adopciones.adopcionmascotas.servicios.interfaz;
+
+import com.adopciones.adopcionmascotas.dtos.Response;
+import com.adopciones.adopcionmascotas.modelos.Mascota;
+
+public interface IMascotaServicio {
+	
+	Response createPet(Mascota mascota);
+	
+	Response getAllPets();
+}

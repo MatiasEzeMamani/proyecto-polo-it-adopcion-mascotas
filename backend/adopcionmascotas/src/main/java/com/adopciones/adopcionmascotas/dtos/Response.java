@@ -22,6 +22,8 @@ public class Response {
     private Rol rol;
     private UsuarioDTO usuario;
     private List<UsuarioDTO> usuarios;
+    private MascotaDTO mascota;
+    private List<MascotaDTO> mascotas;
     
     public Response(int statusCode, String message) {
 		this.statusCode = statusCode;
@@ -92,5 +94,21 @@ public class Response {
 
 	public void setUsuarios(List<UsuarioDTO> usuarios) {
 		this.usuarios = usuarios;
+	}
+
+	public MascotaDTO getMascota() {
+		return mascota;
+	}
+
+	public void setMascota(MascotaDTO mascota) {
+		this.mascota = mascota;
+	}
+
+	public List<MascotaDTO> getMascotas() {
+		return mascotas;
+	}
+
+	public void setMascotas(List<MascotaDTO> mascotas) {
+		this.mascotas = mascotas;
 	}
 }

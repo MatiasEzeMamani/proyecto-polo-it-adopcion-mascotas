@@ -1,0 +1,39 @@
+package com.adopciones.adopcionmascotas.dtos;
+
+import java.math.BigDecimal;
+
+import com.adopciones.adopcionmascotas.modelos.EspecieMascota;
+import com.adopciones.adopcionmascotas.modelos.Estado;
+import com.adopciones.adopcionmascotas.modelos.SexoMascota;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
+
+public class MascotaDTO {
+
+	private Long mascotaId;
+
+	private String nombre;
+
+	private int edad;
+
+	private String imagen;
+	
+	private EspecieMascota especieMascota;
+
+	private BigDecimal peso;
+
+	private String pelaje;
+
+	private Estado estado;
+
+	private SexoMascota sexoMascota;
+}

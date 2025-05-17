@@ -1,0 +1,50 @@
+package com.adopciones.adopcionmascotas.dtos;
+
+import java.math.BigDecimal;
+
+import com.adopciones.adopcionmascotas.modelos.EspecieMascota;
+import com.adopciones.adopcionmascotas.modelos.Estado;
+import com.adopciones.adopcionmascotas.modelos.SexoMascota;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
+
+public class MascotaDTO {
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long mascotaId;
+	
+	@NotEmpty(message = "Coloque su nombre")
+	@Size(min = 3, message = "El nombre debe contener mas de 3 caracteres.")
+	private String nombre;
+	
+	@Min(18)
+	@Max(99)
+	private int edad;
+	
+	@Column(length = 255)
+	private String imagen;
+	
+	@Enumerated(EnumType.STRING)
+	private EspecieMascota especieMascota;
+	
+	@Column(precision = 4, scale = 2)
+	private BigDecimal peso;
+	
+	@Column(length = 50)
+	private String pelaje;
+	
+	@Enumerated(EnumType.STRING)
+	private Estado estado;
+	
+	@Enumerated(EnumType.STRING)
+	private SexoMascota sexoMascota;
+}

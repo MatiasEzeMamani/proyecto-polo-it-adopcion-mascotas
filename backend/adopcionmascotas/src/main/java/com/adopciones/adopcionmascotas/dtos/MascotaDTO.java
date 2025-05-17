@@ -1,0 +1,110 @@
+package com.adopciones.adopcionmascotas.dtos;
+
+import java.math.BigDecimal;
+
+import com.adopciones.adopcionmascotas.modelos.EspecieMascota;
+import com.adopciones.adopcionmascotas.modelos.Estado;
+import com.adopciones.adopcionmascotas.modelos.SexoMascota;
+
+public class MascotaDTO {
+
+	private Long mascotaId;
+
+	private String nombre;
+
+	private int edad;
+
+	private String imagen;
+	
+	private EspecieMascota especieMascota;
+
+	private BigDecimal peso;
+
+	private String pelaje;
+
+	private Estado estado;
+
+	private SexoMascota sexoMascota;
+	
+	private UsuarioDTO usuario;
+
+	public Long getMascotaId() {
+		return mascotaId;
+	}
+
+	public void setMascotaId(Long mascotaId) {
+		this.mascotaId = mascotaId;
+	}
+
+	public String getNombre() {
+		return nombre;
+	}
+
+	public void setNombre(String nombre) {
+		this.nombre = nombre;
+	}
+
+	public int getEdad() {
+		return edad;
+	}
+
+	public void setEdad(int edad) {
+		this.edad = edad;
+	}
+
+	public String getImagen() {
+		return imagen;
+	}
+
+	public void setImagen(String imagen) {
+		this.imagen = imagen;
+	}
+
+	public EspecieMascota getEspecieMascota() {
+		return especieMascota;
+	}
+
+	public void setEspecieMascota(EspecieMascota especieMascota) {
+		this.especieMascota = especieMascota;
+	}
+
+	public BigDecimal getPeso() {
+		return peso;
+	}
+
+	public void setPeso(BigDecimal peso) {
+		this.peso = peso;
+	}
+
+	public String getPelaje() {
+		return pelaje;
+	}
+
+	public void setPelaje(String pelaje) {
+		this.pelaje = pelaje;
+	}
+
+	public Estado getEstado() {
+		return estado;
+	}
+
+	public void setEstado(Estado estado) {
+		this.estado = estado;
+	}
+
+	public SexoMascota getSexoMascota() {
+		return sexoMascota;
+	}
+
+	public void setSexoMascota(SexoMascota sexoMascota) {
+		this.sexoMascota = sexoMascota;
+	}
+
+	public UsuarioDTO getUsuario() {
+		return usuario;
+	}
+
+	public void setUsuario(UsuarioDTO usuario) {
+		this.usuario = usuario;
+	}
+}

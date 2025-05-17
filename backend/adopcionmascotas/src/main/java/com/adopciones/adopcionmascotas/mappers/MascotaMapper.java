@@ -1,0 +1,21 @@
+package com.adopciones.adopcionmascotas.mappers;
+
+import java.util.List;
+
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+
+import com.adopciones.adopcionmascotas.dtos.MascotaDTO;
+import com.adopciones.adopcionmascotas.modelos.Mascota;
+
+@Mapper(componentModel = "spring", uses = {UsuarioMapper.class})
+public interface MascotaMapper {
+	
+	@Mapping(source = "usuario", target = "usuario")
+	MascotaDTO mascotaToMascotaDTO(Mascota mascota);
+	
+	Mascota mascotaDTOToUsuario(MascotaDTO mascotaDTO);
+	
+	List<MascotaDTO> mascotasToMascotasDTOs(List<Mascota> mascotas);
+
+}

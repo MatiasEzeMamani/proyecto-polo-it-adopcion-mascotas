@@ -1,0 +1,21 @@
+package com.adopciones.adopcionmascotas.servicios.interfaz;
+
+import com.adopciones.adopcionmascotas.dtos.Response;
+import com.adopciones.adopcionmascotas.dtos.UsuarioDTO;
+import com.adopciones.adopcionmascotas.modelos.Mascota;
+import com.adopciones.adopcionmascotas.modelos.Usuario;
+
+public interface IMascotaServicio {
+	
+	Response createPet(Mascota mascota);
+	
+	Response getAllPets();
+	
+	Response deletePet(String mascotaId, Usuario currentUser);
+	
+	Response getPetById(String mascotaId);
+
+	Response updatePet(String mascotaId, MascotaDTO mascotaDTO);
+}
+
+

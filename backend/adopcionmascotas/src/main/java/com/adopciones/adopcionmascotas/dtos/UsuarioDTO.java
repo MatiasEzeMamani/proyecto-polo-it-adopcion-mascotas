@@ -29,6 +29,8 @@ public class UsuarioDTO {
 	private Estado estado;
 
 	private String direccion;
+	
+	private int edad;
 
 	public Long getUsuarioId() {
 		return usuarioId;
@@ -109,5 +111,12 @@ public class UsuarioDTO {
 	public void setDireccion(String direccion) {
 		this.direccion = direccion;
 	}
-	
+
+	public int getEdad() {
+		return edad;
+	}
+
+	public void setEdad(int edad) {
+		this.edad = edad;
+	}
 }

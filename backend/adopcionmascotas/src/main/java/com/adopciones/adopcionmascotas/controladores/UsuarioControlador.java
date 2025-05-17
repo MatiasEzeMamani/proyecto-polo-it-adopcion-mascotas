@@ -34,16 +34,29 @@ public class UsuarioControlador {
 
 	// Obtener información de un usuario por ID (GET)
 	@GetMapping("/{usuarioId}")
-	public ResponseEntity<Response> getUserById(@PathVariable String usuarioId) {
+	public ResponseEntity<Response> getUserById(@PathVariable Long usuarioId) {
 		Response response = usuarioServicio.getUserById(usuarioId);
 		return ResponseEntity.status(response.getStatusCode()).body(response);
 	}
 
 	// Eliminar un usuario por ID (DELETE)
-	@DeleteMapping("/{usuarioId}")
-	public ResponseEntity<Response> deleteUser(@PathVariable String usuarioId, @AuthenticationPrincipal Usuario currentUser) {
+	@DeleteMapping("/desactivar/{usuarioId}")
+	public ResponseEntity<Response> desactivarUsuario(@PathVariable Long usuarioId, @AuthenticationPrincipal Usuario currentUser) {
+		Response response = usuarioServicio.desactivarUsuario(usuarioId, currentUser);
+		return ResponseEntity.status(response.getStatusCode()).body(response);
+	}
+	
+	@DeleteMapping("/eliminar/{usuarioId}")
+	public ResponseEntity<Response> deleteUser(@PathVariable Long usuarioId, @AuthenticationPrincipal Usuario currentUser) {
 		Response response = usuarioServicio.deleteUser(usuarioId, currentUser);
 		return ResponseEntity.status(response.getStatusCode()).body(response);
+	}
+
+	@PutMapping("/activar/{id}")
+	public ResponseEntity<Response> activarUsuario(@PathVariable("id") String usuarioId,
+	                                               @AuthenticationPrincipal Usuario currentUser) {
+	    Response response = usuarioServicio.activateUser(usuarioId, currentUser);
+	    return ResponseEntity.status(response.getStatusCode()).body(response);
 	}
 
 	// Obtener información de un usuario usando el correo electrónico (GET)
@@ -55,7 +68,7 @@ public class UsuarioControlador {
 
 	// Modificar información de un usuario (PUT)
 	@PutMapping("edit/{usuarioId}")
-	public ResponseEntity<Response> updateUser(@PathVariable String usuarioId, @Valid @RequestBody UsuarioDTO usuarioDTO) {
+	public ResponseEntity<Response> updateUser(@PathVariable Long usuarioId, @Valid @RequestBody UsuarioDTO usuarioDTO) {
 		Response response = usuarioServicio.updateUsuario(usuarioId, usuarioDTO); // Asegúrate de implementar este método en
 																				// el servicio
 		return ResponseEntity.status(response.getStatusCode()).body(response);

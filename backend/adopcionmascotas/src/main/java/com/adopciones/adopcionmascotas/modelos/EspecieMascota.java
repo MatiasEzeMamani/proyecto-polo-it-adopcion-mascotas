@@ -1,0 +1,5 @@
+package com.adopciones.adopcionmascotas.modelos;
+
+public enum EspecieMascota {
+	PERRO, GATO
+}

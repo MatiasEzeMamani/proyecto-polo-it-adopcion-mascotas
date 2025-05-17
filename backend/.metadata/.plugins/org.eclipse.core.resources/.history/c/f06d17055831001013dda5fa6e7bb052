@@ -1,0 +1,9 @@
+package com.adopciones.adopcionmascotas.repositorios;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.adopciones.adopcionmascotas.modelos.Usuario;
+
+public interface MascotaRepositorio extends JpaRepository<Mascota, Long> {
+
+}

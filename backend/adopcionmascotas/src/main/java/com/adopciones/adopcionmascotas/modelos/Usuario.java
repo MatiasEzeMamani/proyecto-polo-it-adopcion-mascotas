@@ -3,6 +3,7 @@ package com.adopciones.adopcionmascotas.modelos;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.GrantedAuthority;
@@ -11,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -18,11 +20,14 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -32,6 +37,7 @@ import lombok.Data;
 @Entity
 @Table(name = "usuarios")
 public class Usuario implements UserDetails {
+	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long usuarioId;
@@ -45,7 +51,7 @@ public class Usuario implements UserDetails {
 	private String apellido;
 	
 	@Pattern(regexp = "^11\\d{8}$", message = "El teléfono debe comenzar con 11 y tener 10 dígitos en total.")
-	private int telefono;
+	private String telefono;
 	
 	@Column(nullable = false, unique = true)
 	@NotEmpty(message = "Coloque su Email")
@@ -70,6 +76,14 @@ public class Usuario implements UserDetails {
 	@NotEmpty
 	private String direccion;
 	
+	@Min(18)
+	@Max(99)
+	private int edad;
+	
+	@OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+	@JsonIgnore
+	private List<Mascota> mascotas;
+	
 	@Column(updatable = false)
 	@DateTimeFormat(pattern = "yyyy-MM-dd")
 	private Date createdAt;
@@ -78,18 +92,6 @@ public class Usuario implements UserDetails {
 	private Date updatedAt;
 
 	public Usuario() {
-	}
-
-	@PrePersist
-	protected void onCreate() {
-		Date currentDate = new Date();
-		this.createdAt = currentDate;
-		this.updatedAt = currentDate;
-	}
-
-	@PreUpdate
-	protected void onUpdate() {
-		this.updatedAt = new Date();
 	}
 	
 	public Long getUsuarioId() {
@@ -115,12 +117,12 @@ public class Usuario implements UserDetails {
 	public void setApellido(String apellido) {
 		this.apellido = apellido;
 	}
-
-	public int getTelefono() {
+	
+	public String getTelefono() {
 		return telefono;
 	}
 
-	public void setTelefono(int telefono) {
+	public void setTelefono(String telefono) {
 		this.telefono = telefono;
 	}
 
@@ -188,6 +190,34 @@ public class Usuario implements UserDetails {
 		this.updatedAt = updatedAt;
 	}
 
+	public List<Mascota> getMascotas() {
+		return mascotas;
+	}
+
+	public void setMascotas(List<Mascota> mascotas) {
+		this.mascotas = mascotas;
+	}
+
+	public int getEdad() {
+		return edad;
+	}
+
+	public void setEdad(int edad) {
+		this.edad = edad;
+	}
+
+	@PrePersist
+	protected void onCreate() {
+		Date currentDate = new Date();
+		this.createdAt = currentDate;
+		this.updatedAt = currentDate;
+	}
+
+	@PreUpdate
+	protected void onUpdate() {
+		this.updatedAt = new Date();
+	}
+	
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
 	    return Collections.singletonList(new SimpleGrantedAuthority("ROL_" + rol.name()));

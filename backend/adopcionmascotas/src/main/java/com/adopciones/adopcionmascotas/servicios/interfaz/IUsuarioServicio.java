@@ -13,11 +13,15 @@ public interface IUsuarioServicio {
 	
 	Response getAllUsers();
 	
-	Response deleteUser(String usuarioId, Usuario currentUser);
+	Response deleteUser(Long usuarioId, Usuario currentUser);
 	
-	Response getUserById(String usuarioId);
+	Response getUserById(Long usuarioId);
 	
 	Response getMyInfo(String email);
 
-	Response updateUsuario(String usuarioId, UsuarioDTO usuarioDTO);
+	Response updateUsuario(Long usuarioId, UsuarioDTO usuarioDTO);
+	
+	Response desactivarUsuario(Long usuarioId, Usuario currentUser);
+	
+	Response activateUser(String usuarioId, Usuario currentUser);
 }

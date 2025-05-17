@@ -1,0 +1,24 @@
+package com.adopciones.adopcionmascotas.servicios.interfaz;
+
+import java.security.Principal;
+
+import org.springframework.security.core.userdetails.UserDetails;
+
+import com.adopciones.adopcionmascotas.dtos.MascotaDTO;
+import com.adopciones.adopcionmascotas.dtos.Response;
+import com.adopciones.adopcionmascotas.modelos.Usuario;
+
+public interface IMascotaServicio {
+	
+	Response createPet(MascotaDTO mascotaDTO, Usuario currentUser);
+	
+	Response getAllPets();
+	
+	Response deletePet(Long mascotaId, Usuario currentUser);
+	
+	Response getPetById(Long mascotaId);
+
+	Response updatePet(Long mascotaId, MascotaDTO updatedDTO, Usuario currentUser);
+}
+
+

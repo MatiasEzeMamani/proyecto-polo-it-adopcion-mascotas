@@ -1,0 +1,60 @@
+package com.adopciones.adopcionmascotas.controladores;
+
+@RestController
+@RequestMapping("/api/pets")
+public class MascotaControlador {
+	package com.proyecto.fabrica.ps.controllers;
+
+	import org.springframework.beans.factory.annotation.Autowired;
+	import org.springframework.http.ResponseEntity;
+	import org.springframework.security.core.annotation.AuthenticationPrincipal;
+	import org.springframework.web.bind.annotation.*;
+
+	import com.proyecto.fabrica.ps.dto.PetDTO;
+	import com.proyecto.fabrica.ps.dto.Response;
+	import com.proyecto.fabrica.ps.models.Worker;
+	import com.proyecto.fabrica.ps.service.impl.PetService;
+
+	
+	public class PetController {
+
+	    @Autowired
+	    private PetService petService;
+
+	    // Crear nueva mascota
+	    @PostMapping("/add")
+	    public ResponseEntity<Response> addPet(@RequestBody PetDTO petDTO, @AuthenticationPrincipal Worker currentUser) {
+	        Response response = petService.addPet(petDTO, currentUser);
+	        return ResponseEntity.status(response.getStatusCode()).body(response);
+	    }
+
+	    // Obtener todas las mascotas
+	    @GetMapping("/")
+	    public ResponseEntity<Response> getAllPets() {
+	        Response response = petService.getAllPets();
+	        return ResponseEntity.status(response.getStatusCode()).body(response);
+	    }
+
+	    // Obtener mascota por ID
+	    @GetMapping("/{petId}")
+	    public ResponseEntity<Response> getPetById(@PathVariable Long petId) {
+	        Response response = petService.getPetById(petId);
+	        return ResponseEntity.status(response.getStatusCode()).body(response);
+	    }
+
+	    // Actualizar mascota
+	    @PutMapping("/edit/{petId}")
+	    public ResponseEntity<Response> updatePet(@PathVariable Long petId, @RequestBody PetDTO petDTO) {
+	        Response response = petService.updatePet(petId, petDTO);
+	        return ResponseEntity.status(response.getStatusCode()).body(response);
+	    }
+
+	    // Eliminar mascota (lógico)
+	    @DeleteMapping("/{petId}")
+	    public ResponseEntity<Response> deletePet(@PathVariable Long petId, @AuthenticationPrincipal Worker currentUser) {
+	        Response response = petService.deletePet(petId, currentUser);
+	        return ResponseEntity.status(response.getStatusCode()).body(response);
+	    }
+	}
+
+}
