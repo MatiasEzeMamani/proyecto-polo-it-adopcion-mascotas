@@ -1,19 +1,21 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:4040/api/usuarios'; // Asegúrate de que la URL esté configurada correctamente para tu Spring Boot
+const API_URL_AUTH = 'http://localhost:4040/api/auth';
+const API_URL_USERS = 'http://localhost:4040/api';
 
 const ApiService = {
   loginUser: async (email: string, contrasena: string) => {
     try {
-      const response = await axios.post(`${API_URL}/login`, {
+      const response = await axios.post(`${API_URL_AUTH}/login`, {
         email,
         contrasena,
       });
-      return response.data; // El servidor debe devolver algún tipo de dato, como un token o información del usuario
+      return response.data;
     } catch (error) {
-      throw error; // Aquí simplemente lanzamos el error hacia el componente que lo maneja
+      throw error;
     }
   },
+
   registerUser: async (userData: {
     nombre: string;
     apellido: string;
@@ -26,7 +28,20 @@ const ApiService = {
     estado: string;
   }) => {
     try {
-      const response = await axios.post(`${API_URL}/register`, userData);
+      const response = await axios.post(`${API_URL_AUTH}/register`, userData);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  getUsers: async (accessToken: string) => {
+    try {
+      const response = await axios.get(`${API_URL_USERS}/usuarios/`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      });
       return response.data;
     } catch (error) {
       throw error;
