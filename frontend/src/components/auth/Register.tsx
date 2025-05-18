@@ -24,8 +24,8 @@ const Register = () => {
     }
 
     // Validación de teléfono (debe empezar con 11 y tener 8 dígitos más)
-    if (!/^(11\d{8})$/.test(telefono)) {
-      setError("Teléfono inválido. Debe empezar con 11 y tener 8 números más.");
+    if (!/^\d{8}$/.test(telefono)) {
+      setError("Teléfono inválido. Debe tener 8 números luego del 11.");
       return;
     }
 

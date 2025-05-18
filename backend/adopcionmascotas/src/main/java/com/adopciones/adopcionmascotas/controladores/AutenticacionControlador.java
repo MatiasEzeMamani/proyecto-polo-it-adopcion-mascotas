@@ -12,6 +12,7 @@ import com.adopciones.adopcionmascotas.dtos.RefreshTokenSolicitud;
 import com.adopciones.adopcionmascotas.dtos.Response;
 import com.adopciones.adopcionmascotas.modelos.Usuario;
 import com.adopciones.adopcionmascotas.servicios.impl.UsuarioServicios;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -22,7 +23,7 @@ public class AutenticacionControlador {
 
 // Registrar usuario
 	@PostMapping("/register")
-	public ResponseEntity<Response> register(@RequestBody Usuario usuario) {
+	public ResponseEntity<Response> register(@Valid @RequestBody Usuario usuario){
 		Response response = usuarioServicio.register(usuario);
 		return ResponseEntity.status(response.getStatusCode()).body(response);
 	}

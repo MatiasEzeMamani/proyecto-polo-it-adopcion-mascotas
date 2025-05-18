@@ -44,36 +44,36 @@ public class UsuarioServicios implements IUsuarioServicio {
 
 	@Override
 	public Response register(Usuario usuario) {
-	    Response response = new Response();
-	    try {
-	    	
-	    	if(usuario.getRol() == null ) {
-	    		usuario.setRol(Rol.ADOPTANTE);
-	    	}
-	    	if(usuarioRepositorio.existsByEmail(usuario.getEmail())) {
-	    		throw new OurException(usuario.getEmail() + "Ya Existe" );
-	    	}
-	    	
-	    	usuario.setContrasena(passwordEncoder.encode(usuario.getPassword()));
-	    	Usuario guardarUsuario = usuarioRepositorio.save(usuario);
+		Response response = new Response();
+		try {
+			if (usuario.getRol() == null) {
+				usuario.setRol(Rol.ADOPTANTE);
+			}
 
-	    	UsuarioDTO usuarioDTO = usuarioMapper.usuarioToUsuarioDTO(guardarUsuario);
-	    	response.setStatusCode(200);
-	    	response.setUsuario(usuarioDTO);
-	    	
-	    }catch(OurException e){
-	    	
-	    	response.setStatusCode(400);
-	    	response.setMessage(e.getMessage());
-	    	
-	    }catch(Exception e) {
-	    	
-	    	response.setStatusCode(500);
-	    	response.setMessage("Ocurrio un error al registrarse " + e.getMessage());
-	    }
-	    
+			usuarioRepositorio.findByEmail(usuario.getEmail()).ifPresent(u -> {
+				throw new OurException("Ya existe un usuario con ese email");
+			});
+
+			usuario.setContrasena(passwordEncoder.encode(usuario.getPassword()));
+
+			Usuario guardarUsuario = usuarioRepositorio.save(usuario);
+			UsuarioDTO usuarioDTO = usuarioMapper.usuarioToUsuarioDTO(guardarUsuario);
+
+			response.setStatusCode(200);
+			response.setUsuario(usuarioDTO);
+
+		} catch (OurException e) {
+			response.setStatusCode(400);
+			response.setMessage(e.getMessage());
+
+		} catch (Exception e) {
+			response.setStatusCode(500);
+			response.setMessage("Ocurrió un error al registrarse: " + e.getMessage());
+		}
+
 		return response;
 	}
+
 
 	@Override
 	public Response login(IniciarSesion iniciarSesion) {

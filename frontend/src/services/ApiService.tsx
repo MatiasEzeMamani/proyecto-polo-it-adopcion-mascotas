@@ -28,7 +28,14 @@ const ApiService = {
     estado: string;
   }) => {
     try {
-      const response = await axios.post(`${API_URL_AUTH}/register`, userData);
+      // fix: el numero no era el correcto.
+      const telefonoCompleto = `11${userData.telefono}`;
+
+      const response = await axios.post(`${API_URL_AUTH}/register`, {
+        ...userData,
+        telefono: telefonoCompleto,
+      });
+
       return response.data;
     } catch (error) {
       throw error;

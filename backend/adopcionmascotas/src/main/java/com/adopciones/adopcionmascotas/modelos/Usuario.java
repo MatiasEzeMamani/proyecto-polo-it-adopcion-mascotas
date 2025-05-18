@@ -76,10 +76,6 @@ public class Usuario implements UserDetails {
 	@NotEmpty
 	private String direccion;
 	
-	@Min(18)
-	@Max(99)
-	private int edad;
-	
 	@OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
 	@JsonIgnore
 	private List<Mascota> mascotas;
@@ -196,14 +192,6 @@ public class Usuario implements UserDetails {
 
 	public void setMascotas(List<Mascota> mascotas) {
 		this.mascotas = mascotas;
-	}
-
-	public int getEdad() {
-		return edad;
-	}
-
-	public void setEdad(int edad) {
-		this.edad = edad;
 	}
 
 	@PrePersist
