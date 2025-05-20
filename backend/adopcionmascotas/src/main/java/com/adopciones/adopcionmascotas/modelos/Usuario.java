@@ -5,29 +5,16 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import org.springframework.format.annotation.DateTimeFormat;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
-import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -37,29 +24,30 @@ import lombok.Data;
 @Entity
 @Table(name = "usuarios")
 public class Usuario implements UserDetails {
-	
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long usuarioId;
 
 	@NotEmpty(message = "Coloque su nombre")
-	@Size(min = 3, message = "El nombre debe contener mas de 3 caracteres.")
+	@Size(min = 3, message = "El nombre debe contener más de 3 caracteres.")
 	private String nombre;
 
 	@NotEmpty(message = "Coloque su apellido")
-	@Size(min = 3, message = "El apellido debe contener mas de 3 caracteres.")
+	@Size(min = 3, message = "El apellido debe contener más de 3 caracteres.")
 	private String apellido;
-	
+
 	@Pattern(regexp = "^11\\d{8}$", message = "El teléfono debe comenzar con 11 y tener 10 dígitos en total.")
 	private String telefono;
-	
+
 	@Column(nullable = false, unique = true)
 	@NotEmpty(message = "Coloque su Email")
-	@Email(message = "email invalido")
+	@Email(message = "Email inválido")
 	private String email;
-	
+
 	@NotEmpty(message = "Coloque su contraseña")
 	@Size(min = 6, message = "La contraseña necesita al menos 6 caracteres.")
+	@JsonIgnore
 	private String contrasena;
 
 	@Transient
@@ -68,131 +56,30 @@ public class Usuario implements UserDetails {
 	private String confirmar;
 
 	@Enumerated(EnumType.STRING)
-	private Rol rol;
-	
+	private Rol rol; // ADMIN, ADOPTANTE, HOGAR_TRANSITO, FUNDACION
+
 	@Enumerated(EnumType.STRING)
-	private Estado estado;
-	
+	private EstadoUsuario estado; // ACTIVO, INACTIVO
+
 	@NotEmpty
 	private String direccion;
-	
+
+	private Double latitud;    // generado con OpenCage
+	private Double longitud;   // generado con OpenCage
+
+	private String fotoPerfil; // Cloudinary
+	private Boolean verificado = false;
+
 	@OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
 	@JsonIgnore
 	private List<Mascota> mascotas;
-	
+
+	@CreationTimestamp
 	@Column(updatable = false)
-	@DateTimeFormat(pattern = "yyyy-MM-dd")
 	private Date createdAt;
 
-	@DateTimeFormat(pattern = "yyyy-MM-dd")
+	@UpdateTimestamp
 	private Date updatedAt;
-
-	public Usuario() {
-	}
-	
-	public Long getUsuarioId() {
-		return usuarioId;
-	}
-
-	public void setUsuarioId(Long usuarioId) {
-		this.usuarioId = usuarioId;
-	}
-
-	public String getNombre() {
-		return nombre;
-	}
-
-	public void setNombre(String nombre) {
-		this.nombre = nombre;
-	}
-
-	public String getApellido() {
-		return apellido;
-	}
-
-	public void setApellido(String apellido) {
-		this.apellido = apellido;
-	}
-	
-	public String getTelefono() {
-		return telefono;
-	}
-
-	public void setTelefono(String telefono) {
-		this.telefono = telefono;
-	}
-
-	public String getEmail() {
-		return email;
-	}
-
-	public void setEmail(String email) {
-		this.email = email;
-	}
-
-	public String getContrasena() {
-		return contrasena;
-	}
-
-	public void setContrasena(String contrasena) {
-		this.contrasena = contrasena;
-	}
-
-	public String getConfirmar() {
-		return confirmar;
-	}
-
-	public void setConfirmar(String confirmar) {
-		this.confirmar = confirmar;
-	}
-
-	public Rol getRol() {
-		return rol;
-	}
-
-	public void setRol(Rol rol) {
-		this.rol = rol;
-	}
-
-	public Estado getEstado() {
-		return estado;
-	}
-
-	public void setEstado(Estado estado) {
-		this.estado = estado;
-	}
-
-	public String getDireccion() {
-		return direccion;
-	}
-
-	public void setDireccion(String direccion) {
-		this.direccion = direccion;
-	}
-
-	public Date getCreatedAt() {
-		return createdAt;
-	}
-
-	public void setCreatedAt(Date createdAt) {
-		this.createdAt = createdAt;
-	}
-
-	public Date getUpdatedAt() {
-		return updatedAt;
-	}
-
-	public void setUpdatedAt(Date updatedAt) {
-		this.updatedAt = updatedAt;
-	}
-
-	public List<Mascota> getMascotas() {
-		return mascotas;
-	}
-
-	public void setMascotas(List<Mascota> mascotas) {
-		this.mascotas = mascotas;
-	}
 
 	@PrePersist
 	protected void onCreate() {
@@ -205,19 +92,40 @@ public class Usuario implements UserDetails {
 	protected void onUpdate() {
 		this.updatedAt = new Date();
 	}
-	
+
+	// Spring Security
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
-	    return Collections.singletonList(new SimpleGrantedAuthority("ROL_" + rol.name()));
+		return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + rol.name()));
 	}
 
 	@Override
 	public String getPassword() {
-	    return this.contrasena;
+		return this.contrasena;
 	}
 
 	@Override
 	public String getUsername() {
-	    return this.email;  // Aquí asumiendo que el email es el nombre de usuario
+		return this.email;
+	}
+
+	@Override
+	public boolean isAccountNonExpired() {
+		return true;
+	}
+
+	@Override
+	public boolean isAccountNonLocked() {
+		return true;
+	}
+
+	@Override
+	public boolean isCredentialsNonExpired() {
+		return true;
+	}
+
+	@Override
+	public boolean isEnabled() {
+		return estado == EstadoUsuario.ACTIVO;
 	}
 }
