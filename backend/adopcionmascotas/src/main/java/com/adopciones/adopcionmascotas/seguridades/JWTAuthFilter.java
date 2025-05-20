@@ -17,6 +17,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+
 @Component
 public class JWTAuthFilter extends OncePerRequestFilter {
 
@@ -54,6 +56,9 @@ public class JWTAuthFilter extends OncePerRequestFilter {
                                 null, 
                                 userDetails.getAuthorities()
                             );
+                        // fix(autnticacion http)
+                        auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
+
                         SecurityContextHolder
                             .getContext()
                             .setAuthentication(auth);

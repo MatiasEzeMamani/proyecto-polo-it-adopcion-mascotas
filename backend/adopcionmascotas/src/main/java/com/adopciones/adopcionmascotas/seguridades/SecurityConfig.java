@@ -41,6 +41,8 @@ public class SecurityConfig {
 							"/api/auth/login",
 							"/api/auth/refresh"
 					).permitAll()
+					//fix(api/usurios): se declara la api y los roles que pueden acceder => ADMIN
+					.requestMatchers("/api/usuarios", "/api/usuarios/**").hasRole("ADMIN")
 					.anyRequest().authenticated()
 			)
 		 	.sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

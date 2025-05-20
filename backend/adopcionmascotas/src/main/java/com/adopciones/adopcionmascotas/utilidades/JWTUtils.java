@@ -34,10 +34,16 @@ public class JWTUtils {
 		return Keys.hmacShaKeyFor(keyBytes);
 	}
 
-	public String generateAccessToken(UserDetails userDetails) {
-		return Jwts.builder().subject(userDetails.getUsername()).issuedAt(new Date())
-				.expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME)).signWith(key).compact();
+	public String generateAccessToken(String email, String rol) {
+		return Jwts.builder()
+				.subject(email)
+				.claim("rol", rol)
+				.issuedAt(new Date())
+				.expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+				.signWith(key)
+				.compact();
 	}
+
 
 	public String generateRefreshToken(UserDetails userDetails) {
 		return Jwts.builder().subject(userDetails.getUsername()).issuedAt(new Date())
