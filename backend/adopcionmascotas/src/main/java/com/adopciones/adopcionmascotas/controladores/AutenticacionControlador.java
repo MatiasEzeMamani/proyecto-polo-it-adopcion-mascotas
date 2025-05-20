@@ -2,16 +2,14 @@ package com.adopciones.adopcionmascotas.controladores;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.adopciones.adopcionmascotas.dtos.IniciarSesion;
 import com.adopciones.adopcionmascotas.dtos.RefreshTokenSolicitud;
 import com.adopciones.adopcionmascotas.dtos.Response;
-import com.adopciones.adopcionmascotas.modelos.Usuario;
-import com.adopciones.adopcionmascotas.servicios.impl.UsuarioServicios;
+import com.adopciones.adopcionmascotas.dtos.usuarios.UsuarioRegistroDTO;
+import com.adopciones.adopcionmascotas.servicios.interfaz.IUsuarioServicio;
+
 import jakarta.validation.Valid;
 
 @RestController
@@ -19,26 +17,26 @@ import jakarta.validation.Valid;
 public class AutenticacionControlador {
 
 	@Autowired
-	private UsuarioServicios	 usuarioServicio;
+	private IUsuarioServicio usuarioServicio;
 
-// Registrar usuario
+	// Registrar nuevo usuario
 	@PostMapping("/register")
-	public ResponseEntity<Response> register(@Valid @RequestBody Usuario usuario){
-		Response response = usuarioServicio.register(usuario);
+	public ResponseEntity<Response> register(@Valid @RequestBody UsuarioRegistroDTO dto) {
+		Response response = usuarioServicio.register(dto);
 		return ResponseEntity.status(response.getStatusCode()).body(response);
 	}
 
-// Iniciar sesión
+	// Iniciar sesión
 	@PostMapping("/login")
 	public ResponseEntity<Response> login(@RequestBody IniciarSesion loginRequest) {
 		Response response = usuarioServicio.login(loginRequest);
 		return ResponseEntity.status(response.getStatusCode()).body(response);
 	}
 
+	// Renovar token
 	@PostMapping("/refresh")
 	public ResponseEntity<Response> refreshToken(@RequestBody RefreshTokenSolicitud refreshRequest) {
-        Response response = usuarioServicio.refreshToken(refreshRequest);
-
-        return ResponseEntity.status(response.getStatusCode()).body(response);
-    }
-}	
+		Response response = usuarioServicio.refreshToken(refreshRequest);
+		return ResponseEntity.status(response.getStatusCode()).body(response);
+	}
+}
