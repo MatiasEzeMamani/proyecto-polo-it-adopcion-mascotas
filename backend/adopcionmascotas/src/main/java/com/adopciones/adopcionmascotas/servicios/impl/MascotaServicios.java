@@ -6,229 +6,173 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.adopciones.adopcionmascotas.dtos.MascotaDTO;
 import com.adopciones.adopcionmascotas.dtos.Response;
+import com.adopciones.adopcionmascotas.dtos.mascotas.MascotaRegistroDTO;
+import com.adopciones.adopcionmascotas.dtos.mascotas.MascotaRespuestaDTO;
+import com.adopciones.adopcionmascotas.dtos.mascotas.MascotaUpdateDTO;
 import com.adopciones.adopcionmascotas.excepciones.OurException;
 import com.adopciones.adopcionmascotas.mappers.MascotaMapper;
-import com.adopciones.adopcionmascotas.modelos.Estado;
+import com.adopciones.adopcionmascotas.modelos.EstadoMascota;
 import com.adopciones.adopcionmascotas.modelos.Mascota;
 import com.adopciones.adopcionmascotas.modelos.Rol;
 import com.adopciones.adopcionmascotas.modelos.Usuario;
 import com.adopciones.adopcionmascotas.repositorios.MascotaRepositorio;
-import com.adopciones.adopcionmascotas.servicios.interfaz.IMascotaServicio;
+import com.adopciones.adopcionmascotas.servicios.interfaz.mascotas.IMascotaServicio;
 
 @Service
-public class MascotaServicios implements IMascotaServicio{
-	
+public class MascotaServicios implements IMascotaServicio {
+
 	@Autowired
 	private MascotaRepositorio mascotaRepositorio;
-	
+
 	@Autowired
 	private MascotaMapper mascotaMapper;
 
 	@Override
-    public Response createPet(MascotaDTO mascotaDTO, Usuario currentUser) {
-        Response response = new Response();
-
-        try {
-            // Validar que currentUser no sea null
-            if (currentUser == null) {
-                throw new OurException("No se pudo obtener el usuario autenticado");
-            }
-
-            // Validar si la mascota ya existe (solo si se proporciona un ID)
-            if (mascotaDTO.getMascotaId() != null && mascotaRepositorio.existsById(mascotaDTO.getMascotaId())) {
-                throw new OurException("La mascota con el ID " + mascotaDTO.getMascotaId() + " ya está registrada.");
-            }
-
-            // Crear la mascota
-            Mascota mascota = new Mascota();
-            mascota.setEdad(mascotaDTO.getEdad());
-            mascota.setNombre(mascotaDTO.getNombre());
-            mascota.setPelaje(mascotaDTO.getPelaje());
-            mascota.setEspecieMascota(mascotaDTO.getEspecieMascota());
-            mascota.setPeso(mascotaDTO.getPeso());
-            mascota.setSexoMascota(mascotaDTO.getSexoMascota());
-            mascota.setImagen(mascotaDTO.getImagen());
-            mascota.setEstado(Estado.ACTIVO);
-
-            // Asociar la mascota al usuario autenticado
-            mascota.setUsuario(currentUser);
-
-            // Guardar la mascota
-            Mascota savedMascota = mascotaRepositorio.save(mascota);
-
-            // Convertir a DTO
-            MascotaDTO mascotaRespuestaDTO = mascotaMapper.mascotaToMascotaDTO(savedMascota);
-
-            response.setStatusCode(200);
-            response.setMessage("Mascota añadida exitosamente");
-            response.setMascota(mascotaRespuestaDTO);
-
-        } catch (OurException e) {
-            response.setStatusCode(400);
-            response.setMessage(e.getMessage());
-        } catch (Exception e) {
-            response.setStatusCode(500);
-            response.setMessage("Error al añadir la mascota: " + e.getMessage());
-        }
-
-        return response;
-    }
-
-	@Override
-	public Response getAllPets() {
-
+	public Response createPet(MascotaRegistroDTO mascotaDTO, Usuario currentUser) {
 		Response response = new Response();
-		
+
 		try {
-			
-			List<Mascota> mascotas = mascotaRepositorio.findAll();
-			
+			if (currentUser == null) {
+				throw new OurException("No se pudo obtener el usuario autenticado");
+			}
+
+			Mascota mascota = mascotaMapper.mascotaRegistroDTOToMascota(mascotaDTO);
+			mascota.setEstado(EstadoMascota.DISPONIBLE);
+			mascota.setUsuario(currentUser);
+
+			Mascota savedMascota = mascotaRepositorio.save(mascota);
+			MascotaRespuestaDTO mascotaRespuestaDTO = mascotaMapper.mascotaToMascotaRespuestaDTO(savedMascota);
+
 			response.setStatusCode(200);
-			response.setMessage("Lista de mascotas obtenida exitosa");
-			response.setMascotas(mascotaMapper.mascotasToMascotasDTOs(mascotas));
-			
+			response.setMessage("Mascota añadida exitosamente");
+			response.setMascota(mascotaRespuestaDTO);
+
+		} catch (OurException e) {
+			response.setStatusCode(400);
+			response.setMessage(e.getMessage());
 		} catch (Exception e) {
-			
 			response.setStatusCode(500);
-			response.setMessage("Error al obtener las mascotas: " + e.getMessage());
-		
+			response.setMessage("Error al añadir la mascota: " + e.getMessage());
 		}
-		
+
 		return response;
 	}
 
 	@Override
+	public Response getAllPets() {
+		Response response = new Response();
+		try {
+			List<Mascota> mascotas = mascotaRepositorio.findAll();
+			List<MascotaRespuestaDTO> mascotasDTO = mascotaMapper.mascotasToMascotaRespuestaDTOs(mascotas);
+
+			response.setStatusCode(200);
+			response.setMessage("Lista de mascotas obtenida exitosamente");
+			response.setMascotas(mascotasDTO); // esto es una lista
+		} catch (Exception e) {
+			response.setStatusCode(500);
+			response.setMessage("Error al obtener las mascotas: " + e.getMessage());
+		}
+		return response;
+	}
+
+
+	@Override
 	public Response deletePet(Long mascotaId, Usuario currentUser) {
 		Response response = new Response();
+		try {
+			Mascota mascota = mascotaRepositorio.findById(mascotaId)
+					.orElseThrow(() -> new OurException("Mascota no encontrada con el ID: " + mascotaId));
 
-	    try {
-	        Optional<Mascota> optionalMascota = mascotaRepositorio.findById(mascotaId);
-	        if (!optionalMascota.isPresent()) {
-	            throw new OurException("Mascota no encontrada con el ID: " + mascotaId);
-	        }
+			if (!mascota.getUsuario().getUsuarioId().equals(currentUser.getUsuarioId())
+					&& !currentUser.getRol().equals(Rol.ADMIN)) {
+				throw new OurException("No tienes permisos para eliminar esta mascota");
+			}
 
-	        Mascota mascota = optionalMascota.get();
+			mascota.setEstado(EstadoMascota.INACTIVA);
+			mascotaRepositorio.save(mascota);
 
-	        // Validación de permisos
-	        if (!mascota.getUsuario().getUsuarioId().equals(currentUser.getUsuarioId())
-	            && !currentUser.getRol().equals(Rol.ADMIN)) {
-	            throw new OurException("No tienes permisos para eliminar esta mascota");
-	        }
+			response.setStatusCode(200);
+			response.setMessage("Mascota desactivada correctamente");
 
-	        // Eliminación lógica con enum
-	        mascota.setEstado(Estado.INACTIVO);
-	        mascotaRepositorio.save(mascota);
-
-	        response.setStatusCode(200);
-	        response.setMessage("Mascota desactivada correctamente");
-
-	    } catch (OurException e) {
-	        response.setStatusCode(404);
-	        response.setMessage(e.getMessage());
-	    } catch (Exception e) {
-	        response.setStatusCode(500);
-	        response.setMessage("Error al desactivar la mascota: " + e.getMessage());
-	    }
-
-	    return response;
+		} catch (OurException e) {
+			response.setStatusCode(404);
+			response.setMessage(e.getMessage());
+		} catch (Exception e) {
+			response.setStatusCode(500);
+			response.setMessage("Error al desactivar la mascota: " + e.getMessage());
+		}
+		return response;
 	}
-	
+
 	@Override
 	public Response activatePet(Long mascotaId, Usuario currentUser) {
-	    Response response = new Response();
+		Response response = new Response();
+		try {
+			Mascota mascota = mascotaRepositorio.findById(mascotaId)
+					.orElseThrow(() -> new OurException("Mascota no encontrada con el ID: " + mascotaId));
 
-	    try {
-	        Mascota mascota = mascotaRepositorio.findById(mascotaId)
-	                .orElseThrow(() -> new OurException("Mascota no encontrada con el ID: " + mascotaId));
+			if (!mascota.getUsuario().getUsuarioId().equals(currentUser.getUsuarioId())) {
+				throw new OurException("No tienes permisos para activar esta mascota");
+			}
 
-	        // Solo puede activarla el dueño o un admin
-	        if (!mascota.getUsuario().getUsuarioId().equals(currentUser.getUsuarioId())) {
-	            throw new OurException("No tienes permisos para activar esta mascota");
-	        }
+			mascota.setEstado(EstadoMascota.DISPONIBLE);
+			mascotaRepositorio.save(mascota);
 
-	        mascota.setEstado(Estado.ACTIVO);
-	        mascotaRepositorio.save(mascota);
-
-	        response.setStatusCode(200);
-	        response.setMessage("Mascota activada correctamente");
-
-	    } catch (OurException e) {
-	        response.setStatusCode(404);
-	        response.setMessage(e.getMessage());
-	    } catch (Exception e) {
-	        response.setStatusCode(500);
-	        response.setMessage("Error al activar la mascota: " + e.getMessage());
-	    }
-
-	    return response;
+			response.setStatusCode(200);
+			response.setMessage("Mascota activada correctamente");
+		} catch (OurException e) {
+			response.setStatusCode(404);
+			response.setMessage(e.getMessage());
+		} catch (Exception e) {
+			response.setStatusCode(500);
+			response.setMessage("Error al activar la mascota: " + e.getMessage());
+		}
+		return response;
 	}
-	
+
 	@Override
 	public Response getPetById(Long mascotaId) {
-		
 		Response response = new Response();
-		
 		try {
-			
-			Mascota mascota = mascotaRepositorio.findById(mascotaId).orElseThrow(() -> new OurException("Mascota no encontrada con el id: " + mascotaId));
-			MascotaDTO mascotaDTO = mascotaMapper.mascotaToMascotaDTO(mascota);
-			
+			Mascota mascota = mascotaRepositorio.findById(mascotaId)
+					.orElseThrow(() -> new OurException("Mascota no encontrada con el id: " + mascotaId));
+			MascotaRespuestaDTO mascotaDTO = mascotaMapper.mascotaToMascotaRespuestaDTO(mascota);
 			response.setStatusCode(200);
 			response.setMascota(mascotaDTO);
-			
 		} catch (OurException e) {
-	    
 			response.setStatusCode(404);
-	        response.setMessage(e.getMessage());
-	    
+			response.setMessage(e.getMessage());
 		} catch (Exception e) {
-	    	
-	        response.setStatusCode(500);
-	        response.setMessage("Error al buscar la mascota: " + e.getMessage());
-	    
-	    }
-
-	    return response;
+			response.setStatusCode(500);
+			response.setMessage("Error al buscar la mascota: " + e.getMessage());
+		}
+		return response;
 	}
 
 	@Override
-	public Response updatePet(Long mascotaId, MascotaDTO updatedDTO, Usuario currentUser) {
-	    Response response = new Response();
+	public Response updatePet(Long mascotaId, MascotaUpdateDTO updatedDTO, Usuario currentUser) {
+		Response response = new Response();
+		try {
+			Mascota mascota = mascotaRepositorio.findById(mascotaId)
+					.orElseThrow(() -> new OurException("Mascota no encontrada"));
 
-	    try {
-	        Mascota mascota = mascotaRepositorio.findById(mascotaId)
-	            .orElseThrow(() -> new OurException("Mascota no encontrada"));
+			if (!mascota.getUsuario().getUsuarioId().equals(currentUser.getUsuarioId())) {
+				throw new OurException("No tenés permiso para actualizar esta mascota.");
+			}
 
-	        // Validación de permisos
-	        if (!mascota.getUsuario().getUsuarioId().equals(currentUser.getUsuarioId())) {
-	            throw new OurException("No tenés permiso para actualizar esta mascota.");
-	        }
+			mascotaMapper.actualizarMascotaDesdeDTO(updatedDTO, mascota);
+			mascotaRepositorio.save(mascota);
 
-	        // Actualización de campos desde el DTO
-	        mascota.setNombre(updatedDTO.getNombre());
-	        mascota.setEdad(updatedDTO.getEdad());
-	        mascota.setImagen(updatedDTO.getImagen());
-	        mascota.setEspecieMascota(updatedDTO.getEspecieMascota());
-	        mascota.setPeso(updatedDTO.getPeso());
-	        mascota.setPelaje(updatedDTO.getPelaje());
-	        mascota.setEstado(Estado.ACTIVO);
-	        mascota.setSexoMascota(updatedDTO.getSexoMascota());
-
-	        mascotaRepositorio.save(mascota);
-
-	        response.setStatusCode(200);
-	        response.setMessage("Mascota actualizada correctamente");
-
-	    } catch (OurException e) {
-	        response.setStatusCode(403);
-	        response.setMessage(e.getMessage());
-	    } catch (Exception e) {
-	        response.setStatusCode(500);
-	        response.setMessage("Error al actualizar la mascota: " + e.getMessage());
-	    }
-
-	    return response;
+			response.setStatusCode(200);
+			response.setMessage("Mascota actualizada correctamente");
+		} catch (OurException e) {
+			response.setStatusCode(403);
+			response.setMessage(e.getMessage());
+		} catch (Exception e) {
+			response.setStatusCode(500);
+			response.setMessage("Error al actualizar la mascota: " + e.getMessage());
+		}
+		return response;
 	}
 }

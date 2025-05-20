@@ -14,10 +14,12 @@ import org.springframework.web.server.ResponseStatusException;
 import com.adopciones.adopcionmascotas.dtos.IniciarSesion;
 import com.adopciones.adopcionmascotas.dtos.RefreshTokenSolicitud;
 import com.adopciones.adopcionmascotas.dtos.Response;
-import com.adopciones.adopcionmascotas.dtos.UsuarioDTO;
+import com.adopciones.adopcionmascotas.dtos.usuarios.UsuarioRegistroDTO;
+import com.adopciones.adopcionmascotas.dtos.usuarios.UsuarioRespuestaDTO;
+import com.adopciones.adopcionmascotas.dtos.usuarios.UsuarioUpdateDTO;
 import com.adopciones.adopcionmascotas.excepciones.OurException;
 import com.adopciones.adopcionmascotas.mappers.UsuarioMapper;
-import com.adopciones.adopcionmascotas.modelos.Estado;
+import com.adopciones.adopcionmascotas.modelos.EstadoUsuario;
 import com.adopciones.adopcionmascotas.modelos.Rol;
 import com.adopciones.adopcionmascotas.modelos.Usuario;
 import com.adopciones.adopcionmascotas.repositorios.UsuarioRepositorio;
@@ -26,46 +28,53 @@ import com.adopciones.adopcionmascotas.utilidades.JWTUtils;
 
 @Service
 public class UsuarioServicios implements IUsuarioServicio {
-	
+
 	@Autowired
 	private UsuarioRepositorio usuarioRepositorio;
-	
+
 	@Autowired
 	private PasswordEncoder passwordEncoder;
-	
+
 	@Autowired
 	private JWTUtils jwtUtils;
-	
+
 	@Autowired
 	private AuthenticationManager authenticationManager;
-	
+
 	@Autowired
 	private UsuarioMapper usuarioMapper;
 
 	@Override
-	public Response register(Usuario usuario) {
+	public Response register(UsuarioRegistroDTO dto) {
 		Response response = new Response();
 		try {
-			if (usuario.getRol() == null) {
-				usuario.setRol(Rol.ADOPTANTE);
+			if (dto.getRol() == null) {
+				dto.setRol(Rol.ADOPTANTE);
 			}
 
-			usuarioRepositorio.findByEmail(usuario.getEmail()).ifPresent(u -> {
+			usuarioRepositorio.findByEmail(dto.getEmail()).ifPresent(u -> {
 				throw new OurException("Ya existe un usuario con ese email");
 			});
 
-			usuario.setContrasena(passwordEncoder.encode(usuario.getPassword()));
+			if (!dto.getContrasena().equals(dto.getConfirmar())) {
+				throw new OurException("La contraseña y su confirmación no coinciden");
+			}
 
-			Usuario guardarUsuario = usuarioRepositorio.save(usuario);
-			UsuarioDTO usuarioDTO = usuarioMapper.usuarioToUsuarioDTO(guardarUsuario);
+			Usuario usuario = usuarioMapper.usuarioRegistroDTOtoUsuario(dto);
+			System.out.println("DTO recibido: " + dto); // <-- DEBUG
+			System.out.println("Usuario creado por el mapper: " + usuario); // <-- DEBUG
+			usuario.setContrasena(passwordEncoder.encode(dto.getContrasena()));
+			usuario.setEstado(EstadoUsuario.ACTIVO);
+
+			Usuario guardado = usuarioRepositorio.save(usuario);
+			UsuarioRespuestaDTO respuestaDTO = usuarioMapper.usuarioToUsuarioRespuestaDTO(guardado);
 
 			response.setStatusCode(200);
-			response.setUsuario(usuarioDTO);
+			response.setUsuario(respuestaDTO);
 
 		} catch (OurException e) {
 			response.setStatusCode(400);
 			response.setMessage(e.getMessage());
-
 		} catch (Exception e) {
 			response.setStatusCode(500);
 			response.setMessage("Ocurrió un error al registrarse: " + e.getMessage());
@@ -74,302 +83,218 @@ public class UsuarioServicios implements IUsuarioServicio {
 		return response;
 	}
 
-
 	@Override
 	public Response login(IniciarSesion iniciarSesion) {
-	    Response response = new Response();
-	    try {
-	        // 1) Autenticar al usuario
-	        authenticationManager.authenticate(
-	            new UsernamePasswordAuthenticationToken(
-	                iniciarSesion.getEmail(),
-	                iniciarSesion.getContrasena()
-	            )
-	        );
+		Response response = new Response();
+		try {
+			authenticationManager.authenticate(
+					new UsernamePasswordAuthenticationToken(
+							iniciarSesion.getEmail(),
+							iniciarSesion.getContrasena()
+					)
+			);
 
-	        // 2) Cargar el usuario de la base
-	        Usuario usuario = usuarioRepositorio
-	            .findByEmail(iniciarSesion.getEmail())
-	            .orElseThrow(() -> new OurException("Usuario no encontrado"));
+			Usuario usuario = usuarioRepositorio
+					.findByEmail(iniciarSesion.getEmail())
+					.orElseThrow(() -> new OurException("Usuario no encontrado"));
 
-	        // 3) Generar ambos tokens
-	        String accessToken  = jwtUtils.generateAccessToken(usuario);
-	        String refreshToken = jwtUtils.generateRefreshToken(usuario);
+			String accessToken  = jwtUtils.generateAccessToken(usuario.getEmail(), usuario.getRol().name());
+			String refreshToken = jwtUtils.generateRefreshToken(usuario);
 
-	        // 4) Rellenar la respuesta
-	        response.setStatusCode(200);
-	        response.setMessage("exitoso");
-	        response.setToken(accessToken);
-	        response.setRefreshToken(refreshToken);
-	        response.setRol(usuario.getRol());
-	        response.setExpirationTime("7 Dias");
+			response.setStatusCode(200);
+			response.setMessage("exitoso");
+			response.setToken(accessToken);
+			response.setRefreshToken(refreshToken);
+			response.setRol(usuario.getRol());
+			response.setExpirationTime("7 Dias");
 
-	    } catch (OurException e) {
-	        response.setStatusCode(404);
-	        response.setMessage(e.getMessage());
-	    } catch (Exception e) {
-	        response.setStatusCode(500);
-	        response.setMessage("Ocurrió un error en el inicio de sesión: " + e.getMessage());
-	    }
-	    return response;
+		} catch (OurException e) {
+			response.setStatusCode(404);
+			response.setMessage(e.getMessage());
+		} catch (Exception e) {
+			response.setStatusCode(500);
+			response.setMessage("Ocurrió un error en el inicio de sesión: " + e.getMessage());
+		}
+		return response;
 	}
 
-	//cambio en el response
+	@Override
 	public Response refreshToken(RefreshTokenSolicitud refreshTokenRequest) {
-	    Response response = new Response();
-	    try {
-	        String refreshToken = refreshTokenRequest.getRefreshToken();
-	        if (refreshToken == null || !jwtUtils.isValidRefreshToken(refreshToken)) {
-	            // Devuelve 401 si el refresh expiró
-	            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token inválido o expirado");
-	        }
+		Response response = new Response();
+		try {
+			String refreshToken = refreshTokenRequest.getRefreshToken();
+			if (refreshToken == null || !jwtUtils.isValidRefreshToken(refreshToken)) {
+				throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token inválido o expirado");
+			}
 
-	        // Extraes usuario y sólo generas un nuevo access token
-	        String email = jwtUtils.extractUserName(refreshToken);
-	        Usuario usuario = usuarioRepositorio.findByEmail(email)
-	            .orElseThrow(() -> new OurException("Usuario no encontrado"));
+			String email = jwtUtils.extractUserName(refreshToken);
+			Usuario usuario = usuarioRepositorio.findByEmail(email)
+					.orElseThrow(() -> new OurException("Usuario no encontrado"));
 
-	        String nuevoAccessToken = jwtUtils.generateAccessToken(usuario);
+			String nuevoAccessToken = jwtUtils.generateAccessToken(usuario.getEmail(), usuario.getRol().name());
 
-	        response.setStatusCode(200);
-	        response.setMessage("Access token renovado exitosamente");
-	        response.setToken(nuevoAccessToken);
-	        response.setExpirationTime("1 hora");
-	        // **No seteamos ni devolvemos un nuevo refreshToken**
-	    } catch (OurException e) {
-	        throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
-	    } catch (ResponseStatusException e) {
-	        throw e;
-	    } catch (Exception e) {
-	        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-	            "Ocurrió un error al renovar el token: " + e.getMessage());
-	    }
-	    return response;
+			response.setStatusCode(200);
+			response.setMessage("Access token renovado exitosamente");
+			response.setToken(nuevoAccessToken);
+			response.setExpirationTime("1 hora");
+
+		} catch (OurException e) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+		} catch (ResponseStatusException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+					"Ocurrió un error al renovar el token: " + e.getMessage());
+		}
+		return response;
 	}
 
-
-	
 	@Override
 	public Response getAllUsers() {
-		
 		Response response = new Response();
-		
 		try {
-			
-			List<Usuario> usuarioLista = usuarioRepositorio.findAll();
-			List<UsuarioDTO> usuarioDTOLista = usuarioMapper.usuariosToUsuarioDTOs(usuarioLista);
-			
+			List<Usuario> lista = usuarioRepositorio.findAll();
 			response.setStatusCode(200);
-			response.setMessage("exito");
-			response.setUsuarios(usuarioDTOLista);
-				
+			response.setUsuarios(usuarioMapper.usuariosToUsuarioRespuestaDTOs(lista));
 		} catch (Exception e) {
-			
 			response.setStatusCode(500);
-	    	response.setMessage("Error al obtener todos los usuarios " + e.getMessage());
-	    	
+			response.setMessage("Error al obtener todos los usuarios: " + e.getMessage());
 		}
-		
 		return response;
 	}
 
 	@Override
 	public Response deleteUser(Long usuarioId, @AuthenticationPrincipal Usuario currentUser) {
-		
 		Response response = new Response();
-		
 		try {
-			
 			if (!currentUser.getRol().equals(Rol.ADMIN)) {
-		            throw new OurException("No tienes permisos para eliminar usuarios");
-		    }
-			usuarioRepositorio.findById(Long.valueOf(usuarioId)).orElseThrow(() -> new OurException("Usuario no encontrado")); 
-			usuarioRepositorio.deleteById(Long.valueOf(usuarioId));
-			
+				throw new OurException("No tienes permisos para eliminar usuarios");
+			}
+			usuarioRepositorio.findById(usuarioId)
+					.orElseThrow(() -> new OurException("Usuario no encontrado"));
+			usuarioRepositorio.deleteById(usuarioId);
 			response.setStatusCode(200);
 			response.setMessage("exito");
-			
-		} catch (OurException e){
-			
+		} catch (OurException e) {
 			response.setStatusCode(404);
 			response.setMessage(e.getMessage());
-			
-		} catch (Exception e){
-			
+		} catch (Exception e) {
 			response.setStatusCode(500);
-			response.setMessage("Error al eliminar el usuario" + e.getMessage());
-			
+			response.setMessage("Error al eliminar el usuario: " + e.getMessage());
 		}
-		
 		return response;
 	}
-	
+
 	@Override
 	public Response desactivarUsuario(Long usuarioId, Usuario currentUser) {
-	    Response response = new Response();
+		Response response = new Response();
+		try {
+			Usuario usuario = usuarioRepositorio.findById(usuarioId)
+					.orElseThrow(() -> new OurException("Usuario no encontrado"));
 
-	    try {
-	        Usuario usuario = usuarioRepositorio.findById(Long.valueOf(usuarioId))
-	                            .orElseThrow(() -> new OurException("Usuario no encontrado"));
+			if (!usuario.getUsuarioId().equals(currentUser.getUsuarioId())
+					&& !currentUser.getRol().equals(Rol.ADMIN)) {
+				throw new OurException("No tienes permisos para desactivar este usuario");
+			}
 
-	        if (!usuario.getUsuarioId().equals(currentUser.getUsuarioId()) 
-	            && !currentUser.getRol().equals(Rol.ADMIN)) {
-	            throw new OurException("No tienes permisos para desactivar este usuario");
-	        }	
-
-	        usuario.setEstado(Estado.INACTIVO);
-	        usuarioRepositorio.save(usuario);
-
-	        response.setStatusCode(200);
-	        response.setMessage("Usuario desactivado correctamente");
-
-	    } catch (OurException e) {
-	        response.setStatusCode(404);
-	        response.setMessage(e.getMessage());
-	    } catch (Exception e) {
-	        response.setStatusCode(500);
-	        response.setMessage("Error al desactivar el usuario: " + e.getMessage());
-	    }
-
-	    return response;
+			usuario.setEstado(EstadoUsuario.INACTIVO);
+			usuarioRepositorio.save(usuario);
+			response.setStatusCode(200);
+			response.setMessage("Usuario desactivado correctamente");
+		} catch (OurException e) {
+			response.setStatusCode(404);
+			response.setMessage(e.getMessage());
+		} catch (Exception e) {
+			response.setStatusCode(500);
+			response.setMessage("Error al desactivar el usuario: " + e.getMessage());
+		}
+		return response;
 	}
 
 	@Override
 	public Response activateUser(String usuarioId, Usuario currentUser) {
-	    Response response = new Response();
-
-	    try {
-	        if (!currentUser.getRol().equals(Rol.ADMIN)) {
-	            throw new OurException("No tienes permisos para activar usuarios");
-	        }
-
-	        Usuario usuario = usuarioRepositorio.findById(Long.valueOf(usuarioId))
-	                .orElseThrow(() -> new OurException("Usuario no encontrado"));
-
-	        usuario.setEstado(Estado.ACTIVO);
-	        usuarioRepositorio.save(usuario);
-
-	        response.setStatusCode(200);
-	        response.setMessage("Usuario activado correctamente");
-
-	    } catch (OurException e) {
-	        response.setStatusCode(404);
-	        response.setMessage(e.getMessage());
-	    } catch (Exception e) {
-	        response.setStatusCode(500);
-	        response.setMessage("Error al activar el usuario: " + e.getMessage());
-	    }
-
-	    return response;
-	}
-
-	
-	@Override
-	public Response getUserById(Long usuarioId) {
-		
 		Response response = new Response();
-		
 		try {
-			
-			Usuario usuario = usuarioRepositorio.findById(Long.valueOf(usuarioId)).orElseThrow(() -> new OurException("Usuario no encontrado"));
-			UsuarioDTO usuarioDTO = usuarioMapper.usuarioToUsuarioDTO(usuario);
-			
+			if (!currentUser.getRol().equals(Rol.ADMIN)) {
+				throw new OurException("No tienes permisos para activar usuarios");
+			}
+
+			Usuario usuario = usuarioRepositorio.findById(Long.valueOf(usuarioId))
+					.orElseThrow(() -> new OurException("Usuario no encontrado"));
+
+			usuario.setEstado(EstadoUsuario.ACTIVO);
+			usuarioRepositorio.save(usuario);
+
 			response.setStatusCode(200);
-			response.setMessage("exito");
-			response.setUsuario(usuarioDTO);
-			
+			response.setMessage("Usuario activado correctamente");
 		} catch (OurException e) {
-			
 			response.setStatusCode(404);
 			response.setMessage(e.getMessage());
-			
 		} catch (Exception e) {
-			
 			response.setStatusCode(500);
-			response.setMessage("Error al buscar el usuario" + e.getMessage());
-			
+			response.setMessage("Error al activar el usuario: " + e.getMessage());
 		}
-		
+		return response;
+	}
+
+	@Override
+	public Response getUserById(Long usuarioId) {
+		Response response = new Response();
+		try {
+			Usuario usuario = usuarioRepositorio.findById(usuarioId)
+					.orElseThrow(() -> new OurException("Usuario no encontrado"));
+			response.setStatusCode(200);
+			response.setUsuario(usuarioMapper.usuarioToUsuarioRespuestaDTO(usuario));
+		} catch (OurException e) {
+			response.setStatusCode(404);
+			response.setMessage(e.getMessage());
+		} catch (Exception e) {
+			response.setStatusCode(500);
+			response.setMessage("Error al buscar el usuario: " + e.getMessage());
+		}
 		return response;
 	}
 
 	@Override
 	public Response getMyInfo(String email) {
-
 		Response response = new Response();
-		
 		try {
-			
-			Usuario usuario = usuarioRepositorio.findByEmail(email).orElseThrow(() -> new OurException("Usuario no encontrado"));
-			UsuarioDTO usuarioDTO = usuarioMapper.usuarioToUsuarioDTO(usuario);
-			
+			Usuario usuario = usuarioRepositorio.findByEmail(email)
+					.orElseThrow(() -> new OurException("Usuario no encontrado"));
 			response.setStatusCode(200);
-			response.setMessage("exito");
-			response.setUsuario(usuarioDTO);
-			
+			response.setUsuario(usuarioMapper.usuarioToUsuarioRespuestaDTO(usuario));
 		} catch (OurException e) {
-			
 			response.setStatusCode(404);
 			response.setMessage(e.getMessage());
-			
 		} catch (Exception e) {
-			
 			response.setStatusCode(500);
-			response.setMessage("Error al buscar al usuario" + e.getMessage());
-			
+			response.setMessage("Error al buscar al usuario: " + e.getMessage());
 		}
-		
 		return response;
 	}
-	
+
 	@Override
-	public Response updateUsuario(Long usuarioId, UsuarioDTO usuarioDTO) {
-	    Response response = new Response();
-	    
-	    try {
-	    	Usuario usuario = usuarioRepositorio.findById(Long.valueOf(usuarioId))
-	                            .orElseThrow(() -> new OurException("Usuario no encontrado"));
+	public Response updateUsuario(Long usuarioId, UsuarioUpdateDTO dto) {
+		Response response = new Response();
+		try {
+			Usuario usuario = usuarioRepositorio.findById(usuarioId)
+					.orElseThrow(() -> new OurException("Usuario no encontrado"));
 
-	        // Aquí deberías actualizar los atributos de usuario con los valores del usuarioDTO
-	        
-	        if (usuarioDTO.getEmail() != null && !usuarioDTO.getEmail().equals(usuario.getEmail())) {
-	            if (usuarioRepositorio.existsByEmail(usuarioDTO.getEmail())) {
-	                throw new OurException("El email ya está en uso");
-	            }
-	            usuario.setEmail(usuarioDTO.getEmail());
-	        }
+			usuarioMapper.actualizarUsuarioDesdeDTO(dto, usuario);
 
-	        if (usuarioDTO.getNombre() != null) usuario.setNombre(usuarioDTO.getNombre());
-	        if (usuarioDTO.getApellido() != null) usuario.setApellido(usuarioDTO.getApellido());
-	        if (usuarioDTO.getRol() != null) usuario.setRol(usuarioDTO.getRol());
-	        
-	        if (usuarioDTO.getContrasena() != null && !usuarioDTO.getContrasena().isEmpty()) {
-	            // Validar que la contraseña y la confirmación coincidan
-	            if (!usuarioDTO.getContrasena().equals(usuarioDTO.getConfirmar())) {
-	                throw new OurException("La contraseña y su confirmación no coinciden");
-	            }
+			Usuario actualizado = usuarioRepositorio.save(usuario);
+			UsuarioRespuestaDTO respuestaDTO = usuarioMapper.usuarioToUsuarioRespuestaDTO(actualizado);
 
-	            // Encriptar la nueva contraseña
-	            String encryptedPassword = passwordEncoder.encode(usuarioDTO.getContrasena());
-	            usuario.setContrasena(encryptedPassword);
-	        }
-	        
-	        Usuario updatedUsuario = usuarioRepositorio.save(usuario);
-
-	        response.setStatusCode(200);
-	        response.setMessage("Usuario actualizado correctamente");
-	        response.setUsuario(usuarioMapper.usuarioToUsuarioDTO(updatedUsuario));
-	        
-	    } catch (OurException e) {
-	        response.setStatusCode(404);
-	        response.setMessage(e.getMessage());
-	    } catch (Exception e) {
-	    	
-	    	e.printStackTrace();
-	        response.setStatusCode(500);
-	        response.setMessage("Error al actualizar el usuario: " + e.getMessage());
-	    }
-	    
-	    return response;
+			response.setStatusCode(200);
+			response.setUsuario(respuestaDTO);
+			response.setMessage("Usuario actualizado correctamente");
+		} catch (OurException e) {
+			response.setStatusCode(404);
+			response.setMessage(e.getMessage());
+		} catch (Exception e) {
+			response.setStatusCode(500);
+			response.setMessage("Error al actualizar el usuario: " + e.getMessage());
+		}
+		return response;
 	}
 }
